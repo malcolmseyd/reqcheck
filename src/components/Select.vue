@@ -11,11 +11,13 @@
     </div>
     <br>
     <transition name="fade">
-    <div id="CourseSelect" v-if="school">   
+    <div id="CourseSelect" v-if="school">
+    <!-- <div id="CourseSelect">    -->
         <multiselect ref="select" v-model="selected" :options="options" :multiple="true" :close-on-select="false" :clear-on-select="false" :preserve-search="false" placeholder="Select a Course" label="label" track-by="name" openDirection="top" :max-height="150">
             <template slot="Select" slot-scope="{ options, search, isOpen }"><span class="multiselect__single" v-if="values.length &amp;&amp; !isOpen">{{ values.length }} options selected</span></template>
         </multiselect>
         <p>Great! Now select your classes. </p>
+        <!-- <p>Select your classes. </p> -->
     </div>
     </transition>
     <transition name="fade">
@@ -41,13 +43,23 @@
 
 <script>
 
-  //import vueSelect from 'vue-select'
-  import * as uvic_data from '@/assets/uvic_data.json'
+  // import vueSelect from 'vue-select'
+  // import * as uvic_data from '@/assets/uvic_data.json'
   import * as ubc_data from '@/assets/ubc_data.json'
   import { mapActions } from 'vuex'
   import { mapGetters } from 'vuex'
   import Multiselect from 'vue-multiselect'
  
+  var uvic_data;
+  fetch(
+        "https://uvic.kuali.co/api/v1/catalog/courses/5d9ccc4eab7506001ae4c225"
+        ).then(r=>r.json()
+        ).then(j=>{
+            uvic_data = j;
+            console.log("Fetched course data.");
+            // console.log(uvic_data);
+        });
+
   export default {
     name: 'Select',
     data () {
@@ -66,14 +78,22 @@
     computed: {
         
         options: function() {
-        
-        let options = []
-        for (var course in this.used_data.default){
-            var long_name = course + ": " + this.used_data.default[course].name
-        options.push({name: course, label: long_name})
-        }
-        return options
-        },
+            // console.log("School:")
+            // console.log(this.school.name);
+            
+            let options = []
+            // Wait until uvic_data loads
+            while(uvic_data == undefined);
+
+            for (var i in uvic_data){
+                var long_name = uvic_data[i].__catalogCourseId + ": " + uvic_data[i].title
+                // console.log("Pushing:");
+                // console.log(uvic_data[i]);
+                
+                options.push({name: uvic_data[i].__catalogCourseId, label: long_name})
+            }
+            return options
+            },
         ...mapGetters([
             'selectedCourses',
             'selectedSchool'
@@ -102,6 +122,7 @@
         } ),
         makeGraph(){
             let result = this.selected.map(a => a.name)
+            console.log("Result:"+ result)
             if(this.selected.length === 0){
                 alert("Please select at least one course!")
             } else {
